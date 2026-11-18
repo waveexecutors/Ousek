@@ -11,6 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extract ousek-v1.zip
+        run: |
+          unzip -q -o ousek-v1.zip -d extracted
+          PROJECT_DIR=$(dirname "$(find extracted -name build.gradle -print -quit)")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          ls -la "$PROJECT_DIR"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -21,6 +28,7 @@ jobs:
           gradle-version: 9.2.1
 
       - name: Build
+        working-directory: ${{ env.PROJECT_DIR }}
         run: gradle build --no-daemon
 
       - name: Upload jar
@@ -28,5 +36,5 @@ jobs:
         with:
           name: ousek-v1
           path: |
-            build/libs/*.jar
-            !build/libs/*-sources.jar
+            ${{ env.PROJECT_DIR }}/build/libs/*.jar
+            !${{ env.PROJECT_DIR }}/build/libs/*-sources.jar
