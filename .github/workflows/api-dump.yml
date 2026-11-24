@@ -1,0 +1,89 @@
+name: api-dump
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 9.2.1
+
+      # compile may fail (that is fine); it still downloads and remaps Minecraft
+      - name: Resolve Minecraft
+        run: gradle compileJava --no-daemon || true
+
+      - name: Dump API
+        if: always()
+        run: |
+          JAR=$(find ~/.gradle -name 'minecraft-*.jar' ! -name '*sources*' | grep -i -E 'merged|clientonly|client' | head -1)
+          echo "jar: $JAR"
+          unzip -Z1 "$JAR" | grep -E '\.class$' | sed 's/\.class$//' | tr '/' '.' > classes.txt
+          wc -l classes.txt
+          {
+            echo "== class list (render/model/feature/state/item) =="
+            grep -E 'client\.(render|model|gl|texture|gui\.DrawContext)' classes.txt | grep -v '\$[0-9]' | head -1500
+            echo
+            for c in \
+              net.minecraft.client.model.ModelPart \
+              net.minecraft.client.model.ModelPart\$Cuboid \
+              net.minecraft.client.model.ModelData \
+              net.minecraft.client.model.ModelPartData \
+              net.minecraft.client.model.ModelPartBuilder \
+              net.minecraft.client.model.TexturedModelData \
+              net.minecraft.client.model.Model \
+              net.minecraft.client.render.entity.PlayerEntityRenderer \
+              net.minecraft.client.render.entity.LivingEntityRenderer \
+              net.minecraft.client.render.entity.EntityRenderer \
+              net.minecraft.client.render.entity.feature.FeatureRenderer \
+              net.minecraft.client.render.entity.feature.CapeFeatureRenderer \
+              net.minecraft.client.render.entity.feature.ElytraFeatureRenderer \
+              net.minecraft.client.render.entity.feature.FeatureRendererContext \
+              net.minecraft.client.render.entity.state.PlayerEntityRenderState \
+              net.minecraft.client.render.entity.state.EntityRenderState \
+              net.minecraft.client.render.entity.model.PlayerEntityModel \
+              net.minecraft.client.render.entity.model.BipedEntityModel \
+              net.minecraft.client.render.item.HeldItemRenderer \
+              net.minecraft.client.render.command.OrderedRenderCommandQueue \
+              net.minecraft.client.render.command.RenderCommandQueue \
+              net.minecraft.client.render.RenderLayer \
+              net.minecraft.client.render.RenderLayers \
+              net.minecraft.client.render.VertexConsumer \
+              net.minecraft.client.render.OverlayTexture \
+              net.minecraft.client.gui.DrawContext \
+              net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback \
+              net.minecraft.client.render.GameRenderer \
+              net.minecraft.client.gl.PostEffectProcessor \
+              net.minecraft.client.gl.ShaderLoader \
+              net.minecraft.client.gl.Framebuffer \
+              net.minecraft.client.gl.SimpleFramebuffer \
+              net.minecraft.client.gl.RenderPipelines \
+              net.minecraft.client.render.WorldRenderer \
+              net.minecraft.client.MinecraftClient \
+              net.minecraft.client.util.Window \
+              com.mojang.blaze3d.systems.RenderSystem \
+              com.mojang.blaze3d.systems.CommandEncoder \
+              com.mojang.blaze3d.systems.GpuDevice \
+              com.mojang.blaze3d.systems.RenderPass \
+              com.mojang.blaze3d.textures.GpuTexture \
+              com.mojang.blaze3d.textures.GpuTextureView \
+              com.mojang.blaze3d.pipeline.RenderPipeline \
+              net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents; do
+              echo "================ $c"
+              javap -p -cp "$JAR" "$c" 2>&1 | head -400
+            done
+          } > api-dump.txt
+          wc -c api-dump.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-dump
+          path: api-dump.txt
