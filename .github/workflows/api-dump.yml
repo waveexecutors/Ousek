@@ -23,7 +23,11 @@ jobs:
       - name: Dump API
         if: always()
         run: |
-          JAR=$(find ~/.gradle -name 'minecraft-*.jar' ! -name '*sources*' | grep -i -E 'merged|clientonly|client' | head -1)
+          # the remapped (yarn-named) Minecraft jar made by Loom: the one that contains the named DrawContext class
+          JAR=""
+          for j in $(find . ~/.gradle -name '*.jar' ! -name '*sources*' 2>/dev/null); do
+            if unzip -Z1 "$j" 2>/dev/null | grep -q '^net/minecraft/client/gui/DrawContext.class$'; then JAR="$j"; break; fi
+          done
           echo "jar: $JAR"
           unzip -Z1 "$JAR" | grep -E '\.class$' | sed 's/\.class$//' | tr '/' '.' > classes.txt
           wc -l classes.txt
