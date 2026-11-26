@@ -79,7 +79,24 @@ jobs:
               com.mojang.blaze3d.textures.GpuTexture \
               com.mojang.blaze3d.textures.GpuTextureView \
               com.mojang.blaze3d.pipeline.RenderPipeline \
-              net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents; do
+              net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents \
+              net.minecraft.world.World \
+              net.minecraft.client.world.ClientWorld \
+              net.minecraft.client.render.Camera \
+              net.minecraft.client.render.fog.FogRenderer \
+              net.minecraft.client.render.LightmapTextureManager \
+              net.minecraft.client.render.SkyRendering \
+              net.minecraft.client.render.WeatherRendering \
+              net.minecraft.client.network.ClientPlayNetworkHandler \
+              net.minecraft.network.ClientConnection \
+              net.minecraft.network.packet.s2c.play.EntityPositionS2CPacket \
+              net.minecraft.network.packet.s2c.play.EntityS2CPacket \
+              net.minecraft.network.packet.s2c.play.EntityPositionSyncS2CPacket \
+              net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket \
+              net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket \
+              net.minecraft.network.listener.ClientPlayPacketListener \
+              net.minecraft.entity.Entity \
+              net.minecraft.client.network.ClientPlayerInteractionManager; do
               echo "================ $c"
               javap -p -cp "$JAR" "$c" 2>&1 | head -400
             done
